@@ -8,8 +8,7 @@ import {
 import { useSession } from '../context/SessionContext';
 import { useLang } from '../context/LangContext';
 import LangToggle from '../components/LangToggle';
-import ThemeToggle from '../components/ThemeToggle';
-import { sendMessage, requestDoctor, getDoctorStatus, getHistory, updateSessionLang, endSession } from '../api';
+import { sendMessage, requestDoctor, getDoctorStatus, getHistory, updateSessionLang, endSession, clearSessionToken } from '../api';
 import { useSpeechInput } from '../useSpeechInput';
 
 const POLL_MS = 4000;
@@ -29,6 +28,10 @@ export default function ChatScreen() {
   const [error, setError] = useState(null);
   const [crisis, setCrisis] = useState(null);
   const [showHandoff, setShowHandoff] = useState(false);
+  // The handoff card is a suggestion, not an alert. If the patient keeps
+  // typing they have effectively declined it, so it clears itself rather than
+  // sitting there. The crisis banner deliberately does NOT behave this way.
+  const [handoffAge, setHandoffAge] = useState(0);
   const [status, setStatus] = useState('ai');   // ai | waiting | active | closed
   const [doctor, setDoctor] = useState(null);
   const [endedBy, setEndedBy] = useState(null);
@@ -107,6 +110,17 @@ export default function ChatScreen() {
     if (!text || sending) return;
 
     setMessages((m) => [...m, { sender: 'patient', content: text }]);
+
+    if (showHandoff) {
+      const seen = handoffAge + 1;
+      if (seen >= 2) {
+        setShowHandoff(false);
+        setHandoffAge(0);
+      } else {
+        setHandoffAge(seen);
+      }
+    }
+
     setInput('');
     setSpokeThis(false);
     if (speech.listening) speech.stop();
@@ -119,7 +133,10 @@ export default function ChatScreen() {
         setMessages((m) => [...m, { sender: 'ai', content: res.reply }]);
       }
       if (res.crisis) setCrisis({ helplines: res.helplines });
-      if (status === 'ai' && res.suggestEscalation) setShowHandoff(true);
+      if (status === 'ai' && res.suggestEscalation && !showHandoff) {
+        setShowHandoff(true);
+        setHandoffAge(0);
+      }
       if (res.handledBy === 'doctor' || res.handledBy === 'queue') poll();
     } catch (err) {
       setError(err.message);
@@ -145,6 +162,10 @@ export default function ChatScreen() {
   // page. Nothing about the conversation stays in the browser, which matters
   // on a shared or borrowed device.
   function leaveToLanding() {
+    // Drop the token as well as the state. Leaving it in sessionStorage would
+    // let the next person on a shared device resume a conversation that is not
+    // theirs.
+    clearSessionToken();
     setSessionId(null);
     setAgeBand(null);
     setTopic(null);
@@ -206,7 +227,6 @@ export default function ChatScreen() {
             <XCircle size={17} />
           </button>
         )}
-        <ThemeToggle />
         <LangToggle />
         <a href="tel:1333" className="sos-btn">
           <Phone size={14} />

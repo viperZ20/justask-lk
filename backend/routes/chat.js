@@ -18,7 +18,13 @@ const MAX_MESSAGE_LENGTH = 2000;
 //                      reply. The patient's client polls for the doctor's
 //                      answer instead. Without this, the interface would claim
 //                      a doctor was present while a model did the talking.
-router.post('/', async (req, res, next) => {
+// Requires the session token.
+//
+// This was the most serious of the unprotected routes: reading a conversation
+// was already gated, but WRITING to one was not. Anyone with a session ID could
+// post messages that the patient — and any doctor who joined — would see as
+// coming from the patient themselves.
+router.post('/', requireSessionToken, async (req, res, next) => {
   try {
     const { sessionId, message, wasSpoken } = req.body;
 
@@ -34,6 +40,15 @@ router.post('/', async (req, res, next) => {
 
     const session = await Session.findOne({ sessionId });
     if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    // Sending a message is the clearest possible sign the patient is still
+    // here, so it doubles as the presence heartbeat. Previously lastSeenAt was
+    // only touched by the doctor-status poll, which does not run during an AI
+    // conversation — so an active chat looked abandoned after five minutes and
+    // vanished from the admin's live counts.
+    //
+    // Fire-and-forget: a failed timestamp write must never break a reply.
+    Session.updateOne({ sessionId }, { lastSeenAt: new Date() }).catch(() => {});
 
     // ---- Safety screen runs FIRST, always, regardless of who is answering ----
     const safety = screen(message, session.ageBand);

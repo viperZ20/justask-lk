@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Session = require('../models/session');
-const { signSessionToken } = require('../middleware/sessionAuth');
+const { signSessionToken, requireSessionToken } = require('../middleware/sessionAuth');
 
 const VALID_AGE_BANDS = ['under_16', '16_18', '19_25', '26_40', '40_plus', 'not_specified'];
 const VALID_LANGS = ['en', 'si'];
@@ -44,7 +44,9 @@ router.post('/', async (req, res, next) => {
 
 // PATCH /api/session/:sessionId
 // Updates the session with the chosen topic (step 2 of onboarding).
-router.patch('/:sessionId', async (req, res, next) => {
+// Requires the session token. Without it, anyone holding a session ID could
+// change another patient's topic or language mid-conversation.
+router.patch('/:sessionId', requireSessionToken, async (req, res, next) => {
   try {
     const { topic, ageBand, lang } = req.body;
 
@@ -88,7 +90,9 @@ router.patch('/:sessionId', async (req, res, next) => {
 // The patient ends their own session. Works whether they are talking to the
 // AI or to a doctor — in the doctor case the consultation is released so the
 // doctor is not left waiting on someone who has gone.
-router.post('/:sessionId/end', async (req, res, next) => {
+// Requires the session token — ending someone else's conversation is a small
+// but real denial of service, and it would look to them like a crash.
+router.post('/:sessionId/end', requireSessionToken, async (req, res, next) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) return res.status(404).json({ error: 'Session not found' });

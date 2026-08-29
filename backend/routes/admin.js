@@ -4,8 +4,11 @@ const DoctorProfile = require('../models/doctorProfile');
 const Session = require('../models/session');
 const { requireAdmin } = require('../middleware/adminAuth');
 const AuditLog = require('../models/auditLog');
+const { audit } = require('../services/audit');
+const { adminLimiter } = require('../middleware/rateLimit');
 
 // Every route here requires the administrator key.
+router.use(adminLimiter);
 router.use(requireAdmin);
 
 // GET /api/admin/doctors — every registered doctor, pending first
@@ -57,6 +60,9 @@ router.patch('/doctors/:id', async (req, res, next) => {
       released = result.modifiedCount || 0;
     }
 
+    if (verified) audit.approvedDoctor(doctor, req);
+    else audit.revokedDoctor(doctor, released, req);
+
     res.json({
       doctor: {
         id: doctor._id,
@@ -73,74 +79,64 @@ router.patch('/doctors/:id', async (req, res, next) => {
 // GET /api/admin/stats — a small overview for the dashboard
 router.get('/stats', async (req, res, next) => {
   try {
-    const [pending, verified, waiting, active] = await Promise.all([
+    // "Live" means a patient has been active in the last few minutes. A count
+    // of sessions with status 'ai' would be misleading on its own, because a
+    // session stays in that state forever once someone closes their browser —
+    // the total would only ever grow.
+    // 15 minutes rather than 5: people pause mid-conversation, especially when
+    // the subject is difficult. A window that treats a two-minute silence as
+    // "gone" undercounts exactly the users this platform is for.
+    const liveCutoff = new Date(Date.now() - 15 * 60 * 1000);
+
+    const [pending, verified, withAi, waiting, active, closedToday, stale] = await Promise.all([
       DoctorProfile.countDocuments({ verified: false }),
       DoctorProfile.countDocuments({ verified: true }),
+      Session.countDocuments({ status: 'ai', lastSeenAt: { $gte: liveCutoff } }),
       Session.countDocuments({ status: 'waiting' }),
       Session.countDocuments({ status: 'active' }),
+      Session.countDocuments({
+        status: 'closed',
+        createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+      }),
+      Session.countDocuments({
+        status: { $in: ['waiting', 'active'] },
+        $or: [{ lastSeenAt: { $lt: liveCutoff } }, { lastSeenAt: null }],
+      }),
     ]);
 
     // Note what is absent: no patient content, no message text, no session IDs.
     // An administrator manages professionals, not conversations.
-    res.json({ pending, verified, waiting, active });
+    res.json({ pending, verified, withAi, waiting, active, closedToday, stale });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /api/admin/sessions — live session list for monitoring
-// Metadata only: topic, age band, status, timing. Never message content.
-// An administrator manages the service, not the conversations — being able to
-// read patient messages at will would undo the anonymity the platform promises.
-router.get('/sessions', async (req, res, next) => {
-  try {
-    const sessions = await Session.find({ status: { $in: ['waiting', 'active'] } })
-      .sort({ requestedAt: -1, claimedAt: -1 })
-      .select('sessionId topic ageBand status requestedAt claimedAt lastSeenAt -_id')
-      .limit(100)
-      .lean();
-
-    // Flag ones the patient appears to have abandoned.
-    const STALE_MS = 5 * 60 * 1000;
-    const now = Date.now();
-    const withStale = sessions.map((s) => ({
-      ...s,
-      stale: s.lastSeenAt ? now - new Date(s.lastSeenAt).getTime() > STALE_MS : true,
-    }));
-
-    res.json({
-      sessions: withStale,
-      staleCount: withStale.filter((s) => s.stale).length,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// POST /api/admin/sessions/close — close stale or specific sessions
-// Closing is not deleting. The conversation records remain and expire on their
-// own 30-day schedule; this only releases the session so it stops appearing as
-// live and frees any doctor still attached to it.
+// POST /api/admin/sessions/close
+//
+// Closes sessions the patient appears to have abandoned.
+//
+// Note the deliberate limitation: there is no endpoint that lists individual
+// sessions, and none that closes one by ID. An administrator can act on the
+// population of stale sessions but cannot single out a conversation. Keeping
+// it that way means the admin interface has no route to a specific patient at
+// all, rather than relying on the UI not to offer one.
+//
+// Closing is not deleting. Conversation records remain and expire on their own
+// 30-day schedule.
 router.post('/sessions/close', async (req, res, next) => {
   try {
-    const { sessionId, staleOnly } = req.body;
+    const cutoff = new Date(Date.now() - 15 * 60 * 1000);
 
-    let filter;
-    if (sessionId) {
-      filter = { sessionId, status: { $in: ['waiting', 'active'] } };
-    } else if (staleOnly) {
-      const cutoff = new Date(Date.now() - 5 * 60 * 1000);
-      filter = {
+    const result = await Session.updateMany(
+      {
         status: { $in: ['waiting', 'active'] },
         $or: [{ lastSeenAt: { $lt: cutoff } }, { lastSeenAt: null }],
-      };
-    } else {
-      return res.status(400).json({ error: 'Specify a session or set staleOnly' });
-    }
+      },
+      { $set: { status: 'closed', claimedBy: null, endedBy: 'admin' } }
+    );
 
-    const result = await Session.updateMany(filter, {
-      $set: { status: 'closed', claimedBy: null, endedBy: 'admin' },
-    });
+    audit.closedStaleSessions(result.modifiedCount || 0, req);
 
     res.json({ closed: result.modifiedCount || 0 });
   } catch (err) {
@@ -184,6 +180,8 @@ router.delete('/doctors/:id', async (req, res, next) => {
     const name = doctor.fullName;
     await DoctorProfile.deleteOne({ _id: doctor._id });
 
+    audit.deletedDoctor(name, doctor._id, req);
+
     res.json({
       deleted: true,
       fullName: name,
@@ -206,8 +204,8 @@ router.get('/audit', async (req, res, next) => {
 
     const filter = {};
     if (action && action !== 'all') {
-      // Grouped filters, since "show me security events" is more useful than
-      // picking one action name at a time.
+      // Grouped filters: "show me security events" is more useful than picking
+      // one action name at a time.
       const groups = {
         security: ['doctor.login_failed', 'doctor.account_locked', 'admin.login_failed'],
         access: ['doctor.view_conversation', 'doctor.claim_session', 'doctor.close_session'],
@@ -224,8 +222,6 @@ router.get('/audit', async (req, res, next) => {
       .select('action actorLabel actorId targetType targetId detail createdAt -_id')
       .lean();
 
-    // A count of failed sign-ins in the last hour, which is the number worth
-    // noticing at a glance.
     const recentFailures = await AuditLog.countDocuments({
       action: { $in: ['doctor.login_failed', 'doctor.account_locked'] },
       createdAt: { $gte: new Date(Date.now() - 60 * 60 * 1000) },

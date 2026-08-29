@@ -32,13 +32,23 @@ function accessHeaders() {
 // memory only, never in localStorage: a session token in storage would outlive
 // the conversation on a shared or borrowed device, which is exactly the
 // situation this app exists for.
-let sessionToken = null;
+// sessionStorage, not localStorage: the token survives a page refresh — losing
+// a conversation because someone reloaded would be worse than the risk — but
+// dies when the tab closes. On a shared or borrowed phone, closing the tab
+// ends access, which is the behaviour this app needs.
+const TOKEN_STORE = 'jl_session_token';
 
-export function setSessionToken(t) { sessionToken = t; }
-export function clearSessionToken() { sessionToken = null; }
+export function setSessionToken(t) {
+  if (t) sessionStorage.setItem(TOKEN_STORE, t);
+}
+
+export function clearSessionToken() {
+  sessionStorage.removeItem(TOKEN_STORE);
+}
 
 function sessionHeaders() {
-  return sessionToken ? { Authorization: `Session ${sessionToken}` } : {};
+  const t = sessionStorage.getItem(TOKEN_STORE);
+  return t ? { Authorization: `Session ${t}` } : {};
 }
 
 function authHeaders() {

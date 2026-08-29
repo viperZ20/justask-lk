@@ -7,6 +7,7 @@ const { screen } = require('../services/safetyLayer');
 const { decryptMessages } = require('../services/encryption');
 const { audit } = require('../services/audit');
 const { requireDoctor, requireVerified } = require('../middleware/auth');
+const { requireSessionToken } = require('../middleware/sessionAuth');
 
 // ─────────────────────────────────────────────────────────────
 // PATIENT SIDE — no authentication, session ID only
@@ -15,7 +16,10 @@ const { requireDoctor, requireVerified } = require('../middleware/auth');
 // POST /api/doctor/request
 // The patient asks for a doctor. This does NOT connect anyone — it places the
 // session in the waiting queue for a verified doctor to claim.
-router.post('/request', async (req, res, next) => {
+// Requires the session token. Without it, anyone could queue another patient's
+// session for a doctor, wasting a real clinician's time on a conversation
+// nobody asked to escalate.
+router.post('/request', requireSessionToken, async (req, res, next) => {
   try {
     const { sessionId } = req.body;
     if (!sessionId || typeof sessionId !== 'string') {
@@ -55,7 +59,10 @@ router.post('/request', async (req, res, next) => {
 
 // GET /api/doctor/status/:sessionId
 // The patient's client polls this to learn when a doctor has joined.
-router.get('/status/:sessionId', async (req, res, next) => {
+// Requires the session token. This is the patient's own polling endpoint, and
+// it also serves as their presence heartbeat — both reasons it should be
+// theirs alone.
+router.get('/status/:sessionId', requireSessionToken, async (req, res, next) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId })
       .populate('claimedBy');
