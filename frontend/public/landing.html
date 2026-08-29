@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JustAsk LK — Talk about anything, anonymously</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=Noto+Sans+Sinhala:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        sand: { DEFAULT:'#D4C5B2', light:'#E8DFD3', dark:'#BBA98F' },
+        sage: { DEFAULT:'#8FA68A', light:'#B5C7B1', dark:'#6B8566' },
+        offwhite: '#FAF8F5',
+        terracotta: { DEFAULT:'#C17C60', light:'#D49B84', dark:'#A6654A' },
+        duskpink: { DEFAULT:'#D4A5A5', light:'#E5C3C3', dark:'#B88787' },
+        warmdark: '#2D2A26',
+        warmgray: '#8A8279',
+        linen: '#F0EBE3',
+      },
+      fontFamily: {
+        serif: ['"DM Serif Display"', 'Georgia', 'serif'],
+        sans: ['Inter', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; }
+
+  /* Breathing animation — 4s cycle */
+  @keyframes breathe {
+    0%, 100% { transform: scale(0.86); opacity: 0.55; }
+    50% { transform: scale(1.14); opacity: 1; }
+  }
+  .breathe { animation: breathe 4s ease-in-out infinite; }
+
+  /* Fade up on scroll */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 650ms ease, transform 650ms ease;
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Stagger children */
+  .fade-up.visible .stagger-1 { transition-delay: 0ms; }
+  .fade-up.visible .stagger-2 { transition-delay: 120ms; }
+  .fade-up.visible .stagger-3 { transition-delay: 240ms; }
+  .fade-up.visible .stagger-4 { transition-delay: 360ms; }
+  .stagger-1, .stagger-2, .stagger-3, .stagger-4 {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 550ms ease, transform 550ms ease;
+  }
+  .fade-up.visible .stagger-1,
+  .fade-up.visible .stagger-2,
+  .fade-up.visible .stagger-3,
+  .fade-up.visible .stagger-4 {
+    opacity: 1; transform: translateY(0);
+  }
+
+  /* Ken Burns hover */
+  .ken-burns { transition: transform 6s ease-out; }
+  .ken-burns:hover { transform: scale(1.08); }
+
+  /* Typing cursor */
+  .typing-cursor::after {
+    content: '|';
+    animation: blink 1s step-end infinite;
+    color: #C17C60;
+    font-weight: 300;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Expandable rows */
+  .expand-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 500ms ease, opacity 400ms ease 100ms;
+    opacity: 0;
+  }
+  .expand-content.open {
+    max-height: 200px;
+    opacity: 1;
+  }
+  .expand-chevron {
+    transition: transform 300ms ease;
+  }
+  .expand-chevron.rotated {
+    transform: rotate(180deg);
+  }
+
+  /* Sunbeam diagonal light */
+  .sunbeam::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      transparent 38%,
+      rgba(212,197,178,0.12) 44%,
+      rgba(212,197,178,0.06) 52%,
+      transparent 58%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #FAF8F5; }
+  ::-webkit-scrollbar-thumb { background: #D4C5B2; border-radius: 3px; }
+
+  /* Selection */
+  ::selection { background: #D4A5A5; color: #2D2A26; }
+
+  /* Nav transition */
+  .nav-glass {
+    transition: background 400ms ease, box-shadow 400ms ease, backdrop-filter 400ms ease;
+  }
+  .nav-scrolled {
+    background: rgba(250,248,245,0.85);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 1px 0 rgba(212,197,178,0.3);
+  }
+
+  /* Subtle paper grain */
+  .paper-grain {
+    position: relative;
+  }
+  .paper-grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Chime toggle */
+  .chime-btn {
+    transition: all 300ms ease;
+  }
+  .chime-btn.active {
+    background: #8FA68A;
+    color: white;
+    border-color: #8FA68A;
+  }
+
+  /* Toast */
+  .toast {
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 400ms ease;
+  }
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Scroll progress bar */
+  #scrollProgress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    width: 0%;
+    background: linear-gradient(90deg, #8FA68A, #C17C60);
+    z-index: 60;
+    transition: width 80ms linear;
+  }
+
+  /* Session chip — cipher/shuffle effect, the page's signature motif */
+  .session-chip {
+    font-family: 'Inter', monospace;
+    letter-spacing: 0.05em;
+    font-variant-numeric: tabular-nums;
+  }
+  .session-chip .cipher-char {
+    display: inline-block;
+  }
+
+  /* Phone mockup */
+  .phone-frame {
+    background: #1C2420;
+    border-radius: 2.5rem;
+    box-shadow:
+      0 30px 60px -20px rgba(45,42,38,0.35),
+      0 0 0 1px rgba(255,255,255,0.06) inset;
+  }
+  .phone-notch {
+    background: #1C2420;
+  }
+  .chat-bubble-in {
+    animation: bubbleIn 600ms ease both;
+  }
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .pulse-dot {
+    animation: pulseDot 1.8s ease-in-out infinite;
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 0.4; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Organic blob shapes (replace stock photography) */
+  .blob-shape {
+    border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%;
+    transition: border-radius 8s ease-in-out;
+  }
+  .blob-shape:hover {
+    border-radius: 58% 42% 35% 65% / 55% 60% 40% 45%;
+  }
+
+  /* ── Sinhala typography ──────────────────────────────────────────────
+     DM Serif Display and Inter contain no Sinhala glyphs, so every element
+     has to be switched to a Unicode-complete face — not just the body. The
+     wildcard is deliberate: a single missed selector shows up as mangled
+     text, which is worse than the small specificity cost here. */
+  body.lang-si,
+  body.lang-si *:not(iconify-icon) {
+    font-family: 'Noto Sans Sinhala', 'Inter', sans-serif !important;
+  }
+
+  /* Noto Sans Sinhala has no italic face. Without this the browser fakes one
+     by slanting the glyphs, which distorts Sinhala characters badly — this is
+     what makes headings look broken. Tailwind's .italic utility is why the
+     override needs !important. */
+  body.lang-si .italic,
+  body.lang-si em,
+  body.lang-si i,
+  body.lang-si h1,
+  body.lang-si h2,
+  body.lang-si h3 {
+    font-style: normal !important;
+  }
+
+  /* Sinhala needs more vertical room: the script stacks marks above and below
+     the baseline, and tight display leading clips them. */
+  body.lang-si h1 { line-height: 1.5 !important; }
+  body.lang-si h2 { line-height: 1.45 !important; }
+  body.lang-si h3 { line-height: 1.4 !important; }
+  body.lang-si p  { line-height: 1.85 !important; }
+
+  /* Sinhala words do not break the way English does, so wide tracking
+     scatters them. Reset the letter-spacing utilities used on eyebrow text. */
+  body.lang-si .tracking-\[0\.25em\],
+  body.lang-si .tracking-\[0\.2em\],
+  body.lang-si .tracking-widest,
+  body.lang-si .tracking-wide {
+    letter-spacing: 0.02em !important;
+  }
+
+  /* Uppercasing is meaningless in Sinhala — it has no letter case. */
+  body.lang-si .uppercase { text-transform: none !important; }
+
+  /* Sinhala nav labels are far wider than their English equivalents. Wrapping
+     them makes the bar collide with the logo, so they stay on one line and the
+     spacing tightens instead. Below 1180px the nav collapses to the hamburger
+     menu, where there is vertical room for the full-length labels. */
+  body.lang-si nav a,
+  body.lang-si nav button { white-space: nowrap; }
+  body.lang-si #navbar .hidden.md\:flex { gap: 1rem; }
+  body.lang-si #navbar a[href="/start"],
+  body.lang-si #navbar a[href="/start?doctor=1"] { padding-left: 1rem; padding-right: 1rem; }
+
+  @media (max-width: 1180px) {
+    body.lang-si #navbar .hidden.md\:flex { display: none !important; }
+    body.lang-si #mobileMenuBtn { display: block !important; }
+  }
+</style>
+</head>
+<body class="bg-offwhite text-warmdark overflow-x-hidden">
+
+<div id="scrollProgress"></div>
+
+<!-- ═══════════════════ NAVIGATION ═══════════════════ -->
+<nav id="navbar" class="nav-glass fixed top-0 left-0 right-0 z-50 px-6 md:px-10">
+  <div class="max-w-6xl mx-auto flex items-center justify-between h-16 md:h-20">
+    <a href="#" class="font-serif text-xl md:text-2xl text-warmdark tracking-tight">
+      JustAsk<span class="text-terracotta">LK</span>
+    </a>
+    <div class="hidden md:flex items-center gap-8">
+      <a href="#how" data-i18n-si="ක්‍රියාවලිය" class="text-sm font-medium text-warmgray hover:text-warmdark transition-colors duration-300">How It Works</a>
+      <a href="#topics" data-i18n-si="මාතෘකා" class="text-sm font-medium text-warmgray hover:text-warmdark transition-colors duration-300">Topics</a>
+      <a href="#safety" data-i18n-si="ආරක්ෂාව" class="text-sm font-medium text-warmgray hover:text-warmdark transition-colors duration-300">Safety</a>
+      <a href="/doctor" data-i18n-si="වෛද්‍යවරුන්" class="text-sm font-medium text-warmgray hover:text-warmdark transition-colors duration-300">For Doctors</a>
+      <button id="langToggleDesktop" onclick="toggleLanguage()"
+              class="flex items-center gap-1.5 text-xs font-semibold text-warmgray border border-sand/50 rounded-full px-3 py-1.5 hover:border-terracotta/50 hover:text-warmdark transition-colors duration-300">
+        <iconify-icon icon="lucide:languages" width="14"></iconify-icon>
+        <span id="langLabelDesktop">සිංහල</span>
+      </button>
+      <a href="/start?doctor=1" data-i18n-si="වෛද්‍යවරයෙකු"
+         class="inline-flex items-center gap-1.5 text-sm font-semibold text-warmdark border border-sage/50 px-4 py-2.5 rounded-full
+                hover:bg-sage/10 hover:border-sage transition-colors duration-300">
+        <iconify-icon icon="lucide:stethoscope" width="15"></iconify-icon>
+        Talk to a Doctor
+      </a>
+      <a href="/start" data-i18n-si="කතා කරන්න"
+         class="text-sm font-semibold text-offwhite bg-warmdark px-5 py-2.5 rounded-full
+                hover:bg-terracotta transition-colors duration-300">
+        Start Talking
+      </a>
+    </div>
+    <button id="mobileMenuBtn" class="md:hidden p-2 text-warmdark">
+      <iconify-icon icon="lucide:menu" width="24"></iconify-icon>
+    </button>
+  </div>
+  <!-- Mobile menu -->
+  <div id="mobileMenu" class="md:hidden hidden bg-offwhite/95 backdrop-blur-lg border-t border-sand/30 px-6 pb-6">
+    <div class="flex flex-col gap-4 pt-4">
+      <a href="#how" data-i18n-si="මූලික ක්‍රියාවලිය" class="text-sm font-medium text-warmgray hover:text-warmdark py-2 mobile-link">How It Works</a>
+      <a href="#topics" data-i18n-si="මාතෘකා" class="text-sm font-medium text-warmgray hover:text-warmdark py-2 mobile-link">Topics</a>
+      <a href="#safety" data-i18n-si="ආරක්ෂාව" class="text-sm font-medium text-warmgray hover:text-warmdark py-2 mobile-link">Safety</a>
+      <a href="/doctor" data-i18n-si="වෛද්‍යවරුන් සඳහා" class="text-sm font-medium text-warmgray hover:text-warmdark py-2 mobile-link">For Doctors</a>
+      <button onclick="toggleLanguage()"
+              class="flex items-center gap-1.5 text-xs font-semibold text-warmgray border border-sand/50 rounded-full px-3 py-2 w-fit hover:border-terracotta/50 transition-colors duration-300">
+        <iconify-icon icon="lucide:languages" width="14"></iconify-icon>
+        <span id="langLabelMobile">සිංහල</span>
+      </button>
+      <a href="/start?doctor=1" data-i18n-si="වෛද්‍යවරයෙකු සමඟ කතා කරන්න"
+         class="text-sm font-semibold text-warmdark border border-sage/50 px-5 py-3 rounded-full text-center
+                hover:bg-sage/10 transition-colors duration-300 mt-2 mobile-link">
+        Talk to a Doctor
+      </a>
+      <a href="/start" data-i18n-si="කතා කරන්න"
+         class="text-sm font-semibold text-offwhite bg-warmdark px-5 py-3 rounded-full text-center
+                hover:bg-terracotta transition-colors duration-300 mobile-link">
+        Start Talking
+      </a>
+    </div>
+  </div>
+</nav>
+
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="relative min-h-screen flex flex-col items-center justify-center sunbeam paper-grain px-6 pt-28 pb-16">
+  <!-- Warm background gradients -->
+  <div class="absolute inset-0 bg-gradient-to-b from-linen/60 via-offwhite to-offwhite pointer-events-none"></div>
+  <div class="absolute top-20 left-1/4 w-96 h-96 bg-duskpink/8 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute bottom-20 right-1/4 w-80 h-80 bg-sage/8 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="relative z-10 max-w-6xl mx-auto grid lg:grid-cols-2 gap-14 lg:gap-10 items-center w-full">
+
+    <!-- Left: copy -->
+    <div class="text-center lg:text-left order-2 lg:order-1">
+      <p data-i18n-si="අනන්‍යතාවයෙන් තොරව · AI මගින් · නොමිලේ" class="text-xs font-semibold uppercase tracking-[0.25em] text-warmgray/70 mb-6 fade-up">
+        Anonymous · AI-First · Free
+      </p>
+      <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-[4.2rem] text-warmdark leading-[1.08] mb-6 fade-up" data-i18n-si-html="ඕනෑම දෙයක් ගැන කතා කරන්න,<br><span class=&quot;text-terracotta italic&quot;>අනන්‍යතාවයෙන් තොරව.</span>">
+        Talk about anything,<br>
+        <span class="text-terracotta italic">anonymously.</span>
+      </h1>
+      <p data-i18n-si="ගිණුමක් අවශ්‍ය නැත. නමක් අවශ්‍ය නැත. විනිශ්චයක් නැත. ඔබට කරදර කරන දේ විස්තර කරන්න, ආධාරක මග පෙන්වීමක් ලබාගන්න — අවශ්‍ය නම් සැබෑ වෘත්තිකයෙකු වෙත සම්බන්ධ වන්න." class="text-base md:text-lg text-warmgray font-light leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8 fade-up">
+        No account. No name. No judgement. Describe what's troubling you and get supportive guidance — then connect to a real professional if you need one.
+      </p>
+
+      <!-- Session chip signature -->
+      <div class="inline-flex items-center gap-2.5 bg-white/70 border border-sand/40 rounded-full px-4 py-2 mb-9 fade-up">
+        <span class="relative flex h-2 w-2">
+          <span class="pulse-dot absolute inline-flex h-full w-full rounded-full bg-sage"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-sage"></span>
+        </span>
+        <span class="session-chip text-xs text-warmgray" id="heroSessionChip" data-i18n-si-suffix=" · සෑම වතාවකම නැවත සකසයි">Session · reset every visit</span>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 fade-up">
+        <a href="#start"
+           class="inline-flex items-center gap-2 bg-warmdark text-offwhite text-sm font-semibold px-8 py-4 rounded-full
+                  hover:bg-terracotta transition-colors duration-300 shadow-lg shadow-warmdark/10">
+          <span data-i18n-si="කතාවක් ආරම්භ කරන්න">Start a Conversation</span>
+          <iconify-icon icon="lucide:arrow-right" width="16"></iconify-icon>
+        </a>
+        <a href="#how"
+           class="inline-flex items-center gap-2 text-sm font-medium text-warmgray hover:text-warmdark
+                  transition-colors duration-300 px-6 py-4">
+          <span data-i18n-si="එය ක්‍රියා කරන ආකාරය">Learn how it works</span>
+          <iconify-icon icon="lucide:chevron-down" width="16"></iconify-icon>
+        </a>
+      </div>
+
+      <!-- Trust badge strip -->
+      <div class="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 mt-12 fade-up">
+        <div class="flex items-center gap-2 text-xs text-warmgray/70">
+          <iconify-icon icon="lucide:eye-off" width="14" class="text-sage-dark"></iconify-icon>
+          <span data-i18n-si="අනන්‍යතා තොරතුරු නැත">Zero identity fields</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-warmgray/70">
+          <iconify-icon icon="lucide:shield-check" width="14" class="text-terracotta-dark"></iconify-icon>
+          <span data-i18n-si="SLMC සත්‍යාපිත වෛද්‍යවරු">SLMC-verified doctors</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-warmgray/70">
+          <iconify-icon icon="lucide:phone" width="14" class="text-duskpink-dark"></iconify-icon>
+          <span data-i18n-si="24/7 අර්බුද ආරක්ෂාව">24/7 crisis-safe</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: phone mockup -->
+    <div class="relative order-1 lg:order-2 flex justify-center fade-up">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-duskpink/20 to-sage/15 blur-3xl breathe"></div>
+      </div>
+      <div class="phone-frame relative w-[250px] md:w-[280px] p-3 pt-4">
+        <div class="phone-notch absolute top-3 left-1/2 -translate-x-1/2 w-20 h-4 rounded-full z-20"></div>
+        <div class="bg-[#141B18] rounded-[1.9rem] overflow-hidden pt-7 pb-4 px-3.5 min-h-[500px] flex flex-col">
+          <div class="flex items-center gap-2 px-1 pb-4 border-b border-white/5">
+            <div class="w-7 h-7 rounded-full bg-sage/25 flex items-center justify-center">
+              <iconify-icon icon="lucide:heart-handshake" width="14" class="text-sage-light"></iconify-icon>
+            </div>
+            <div>
+              <p class="text-offwhite text-xs font-medium">JustAsk LK</p>
+              <p class="text-offwhite/40 text-[10px]">AI Health Assistant</p>
+            </div>
+          </div>
+          <div class="flex-1 flex flex-col gap-2.5 pt-4 text-[11px] leading-relaxed">
+            <div class="chat-bubble-in self-start bg-white/8 text-offwhite/85 rounded-2xl rounded-bl-sm px-3.5 py-2.5 max-w-[85%]" style="animation-delay:200ms">
+              <span data-i18n-si="ඔයාට මේ දිනවල හැඟෙන්නේ කොහොමද?">How have you been feeling lately?</span>
+            </div>
+            <div class="chat-bubble-in self-end bg-terracotta/25 text-offwhite/90 rounded-2xl rounded-br-sm px-3.5 py-2.5 max-w-[85%]" style="animation-delay:600ms">
+              <span data-i18n-si="මට කාටවත් මේ ගැන කතා කරන්න බය...">I'm afraid to talk to anyone about this...</span>
+            </div>
+            <div class="chat-bubble-in self-start bg-white/8 text-offwhite/85 rounded-2xl rounded-bl-sm px-3.5 py-2.5 max-w-[85%]" style="animation-delay:1000ms">
+              <span data-i18n-si="ඔයා මෙතන ආරක්ෂිතයි. නමක් නෑ, විනිශ්චයක් නෑ — වෙන්නේ මොකක්ද කියලා කියන්න.">You're safe here. No name, no judgement — just tell me what's going on.</span>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center gap-2 bg-white/5 rounded-full px-3.5 py-2.5">
+            <span class="text-offwhite/30 text-[10px] flex-1" data-i18n-si="ඕනෑම දෙයක් ටයිප් කරන්න…">Type anything…</span>
+            <iconify-icon icon="lucide:send" width="13" class="text-sage-light"></iconify-icon>
+          </div>
+          <p class="text-center text-offwhite/25 text-[9px] mt-2.5 tracking-wide" data-i18n-si="ආරක්ෂිතයි · අනන්‍යතාවයෙන් තොරයි · විනිශ්චයක් නැත">Secure · Anonymous · Judgement-free</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 opacity-40">
+    <span class="text-[10px] uppercase tracking-[0.2em] text-warmgray">Scroll</span>
+    <div class="w-px h-8 bg-gradient-to-b from-warmgray to-transparent"></div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════ WHY — THE PROBLEM ═══════════════════ -->
+<section class="relative py-28 md:py-36 px-6 paper-grain">
+  <div class="relative z-10 max-w-5xl mx-auto">
+    <div class="grid md:grid-cols-2 gap-16 md:gap-20 items-center">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-terracotta mb-5 fade-up" data-i18n-si="ගැටලුව">The Problem</p>
+        <h2 class="font-serif text-3xl md:text-4xl text-warmdark leading-[1.15] mb-6 fade-up" data-i18n-si-html="බොහෝ අය විනිශ්චයට ලක්වීමේ අවදානම දරාගැනීමට වඩා<br class=&quot;hidden md:block&quot;> නිහඬව දුක් විඳිති.">
+          Many people suffer in silence<br class="hidden md:block"> rather than risk being judged.
+        </h2>
+        <p class="text-warmgray font-light leading-[1.8] mb-6 fade-up" data-i18n-si="ශ්‍රී ලංකාවේ, මානසික සෞඛ්‍ය ගැටලු, ලිංගික සෞඛ්‍ය ගැටලු සහ ඇබ්බැහිවීම වටා දැඩි සමාජ අපකීර්තියක් පවතී. සායනයක දී හඳුනාගැනීමට ලක්වීමේ බිය — හෝ දන්නා කෙනෙකුගෙන් විනිශ්චයට ලක්වීම — මිනිසුන් ආධාර පැතීමෙන් වළක්වයි.">
+          In Sri Lanka, strong social stigma surrounds mental health struggles, sexual-health concerns, and addiction. The fear of being recognised at a clinic — or judged by someone who knows you — keeps people from seeking help.
+        </p>
+        <p class="text-warmgray font-light leading-[1.8] fade-up" data-i18n-si-html="අර්බුද සහාය දුරකථන අංක හදිසි අවස්ථා සඳහා පවතී. චිකිත්සා වේදිකා වෙන්කරවා ගෙවිය හැකි අයට පවතී. නමුත් අතරමැදි කිසිවක් නැත — <span class=&quot;text-warmdark font-normal&quot;>නොමිලේ, අනන්‍යතාවයෙන් තොර, බහු-මාතෘකා ස්ථානයක් නොමැත</span> ඔබ වඩාත්ම ලැජ්ජා වන දේ ගැන අසන්න.">
+          Crisis helplines exist for emergencies. Therapy platforms exist for those who can book and pay. But there's nothing in between — <span class="text-warmdark font-normal">no free, anonymous, multi-topic place to simply ask</span> about the things you're most ashamed to discuss.
+        </p>
+      </div>
+      <div class="fade-up">
+        <div class="relative rounded-2xl h-[420px] md:h-[520px] bg-gradient-to-br from-linen to-sand/40 overflow-hidden flex items-center justify-center">
+          <div class="blob-shape absolute w-[70%] h-[55%] bg-gradient-to-br from-duskpink/25 to-terracotta/10 blur-2xl"></div>
+          <div class="blob-shape absolute w-[45%] h-[40%] bg-gradient-to-tl from-sage/25 to-sand/20 blur-xl" style="top:15%; right:10%; animation-delay:-3s"></div>
+          <iconify-icon icon="lucide:user-round" width="40" class="relative text-warmdark/15"></iconify-icon>
+          <div class="absolute bottom-8 left-8 right-8 bg-white/50 backdrop-blur-sm rounded-xl px-5 py-4 border border-sand/30">
+            <p class="text-xs font-light text-warmgray italic leading-relaxed">"I'd rather suffer in silence than risk someone I know finding out."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════ HOW IT WORKS ═══════════════════ -->
+<section id="how" class="relative py-28 md:py-36 px-6 bg-linen/50 paper-grain">
+  <div class="relative z-10 max-w-3xl mx-auto">
+    <div class="text-center mb-16">
+      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-sage-dark mb-5 fade-up" data-i18n-si="එය ක්‍රියා කරන ආකාරය">How It Works</p>
+      <h2 class="font-serif text-3xl md:text-4xl text-warmdark leading-[1.15] fade-up" data-i18n-si="සවන් දීමට මෘදු පියවර හතරක්.">
+        Four gentle steps to being heard.
+      </h2>
+    </div>
+
+    <div class="space-y-0">
+      <!-- Step 1 -->
+      <div class="fade-up border-b border-sand/40">
+        <button onclick="toggleExpand(this)" class="w-full flex items-start gap-5 py-6 text-left group">
+          <span class="font-serif text-2xl text-sage/60 mt-0.5 shrink-0">01</span>
+          <div class="flex-1">
+            <h3 class="font-serif text-xl md:text-2xl text-warmdark group-hover:text-terracotta transition-colors duration-300" data-i18n-si="ගිණුමක් අවශ්‍ය නැත — ඇප් එක විවෘත කරන්න">
+              Open the app — no account needed
+            </h3>
+          </div>
+          <iconify-icon icon="lucide:chevron-down" width="20" class="expand-chevron text-warmgray mt-2 shrink-0"></iconify-icon>
+        </button>
+        <div class="expand-content pl-12 pb-6">
+          <p class="text-warmgray font-light leading-[1.8]" data-i18n-si="ඔබට අහඹු session ID එකක් ලබා දෙනු ලැබේ. නමක් නෑ, විද්‍යුත් තැපෑලක් නෑ, දුරකථන අංකයක් නෑ — ඔබව හඳුනාගැනීමට කිසිවක් නැත. අප ඉල්ලන එකම දෙය පුළුල් වයස් කාණ්ඩයක් පමණි (උදා: '19–25') එමගින් අපට ස්වරය සකස් කර, බාල වයස්කරුවන්ට අදාළ සහාය වෙත යොමු කළ හැක. එපමණයි.">
+            You're assigned a random session ID. No name, no email, no phone number — nothing that identifies you. The only thing we ask is a broad age band (like "19–25") so we can tailor our tone and route younger users to child-specific support. That's it.
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="fade-up border-b border-sand/40">
+        <button onclick="toggleExpand(this)" class="w-full flex items-start gap-5 py-6 text-left group">
+          <span class="font-serif text-2xl text-sage/60 mt-0.5 shrink-0">02</span>
+          <div class="flex-1">
+            <h3 class="font-serif text-xl md:text-2xl text-warmdark group-hover:text-terracotta transition-colors duration-300" data-i18n-si="ඔබට කරදර කරන දේ විස්තර කරන්න">
+              Describe what's troubling you
+            </h3>
+          </div>
+          <iconify-icon icon="lucide:chevron-down" width="20" class="expand-chevron text-warmgray mt-2 shrink-0"></iconify-icon>
+        </button>
+        <div class="expand-content pl-12 pb-6">
+          <p class="text-warmgray font-light leading-[1.8]" data-i18n-si="මාතෘකාවක් තෝරන්න — මානසික සෞඛ්‍යය, ලිංගික සෞඛ්‍යය, ඇබ්බැහිවීම, හෝ සාමාන්‍ය සෞඛ්‍යය — නැතහොත් ටයිප් කිරීම ආරම්භ කරන්න. AI එකට ස්වාභාවික භාෂාව තේරුම් ගෙන සැලකිල්ලෙන් පිළිතුරු දෙයි. එය ඔබව කිසි විටෙකත් විනිශ්චය නොකරයි, ඉක්මන් නොකරයි, හෝ ඔබට හැඟෙන දේ වැරදියි කියා නොකියයි.">
+            Choose a topic — mental health, sexual health, addiction, or general health — or just start typing. The AI understands natural language and responds with care. It will never judge you, rush you, or tell you you're wrong for feeling what you feel.
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="fade-up border-b border-sand/40">
+        <button onclick="toggleExpand(this)" class="w-full flex items-start gap-5 py-6 text-left group">
+          <span class="font-serif text-2xl text-sage/60 mt-0.5 shrink-0">03</span>
+          <div class="flex-1">
+            <h3 class="font-serif text-xl md:text-2xl text-warmdark group-hover:text-terracotta transition-colors duration-300" data-i18n-si="ආධාරක, විනිශ්චයෙන් තොර මග පෙන්වීමක් ලබාගන්න">
+              Receive supportive, judgement-free guidance
+            </h3>
+          </div>
+          <iconify-icon icon="lucide:chevron-down" width="20" class="expand-chevron text-warmgray mt-2 shrink-0"></iconify-icon>
+        </button>
+        <div class="expand-content pl-12 pb-6">
+          <p class="text-warmgray font-light leading-[1.8]" data-i18n-si="AI එක ඔබේ තත්ත්වය සහ විකල්ප තේරුම් ගැනීමට උදව් කරයි. එය සපයන්නේ තොරතුරු මිස රෝග විනිශ්චයක් නොවේ. ඔබට 'තියෙනවා' කියලා කිසි විටෙකත් රෝගයක් හෝ ගත යුතු බෙහෙතක් නොකියයි. එය දැනුමින් යුත්, කරුණාවන්ත පළමු පියවරක් ලෙස සිතන්න — වෘත්තිකයෙකුට ආදේශකයක් නොවේ.">
+            The AI helps you understand your situation and options. It provides information, not diagnosis. It will never tell you that you "have" a condition or what medication to take. Think of it as a knowledgeable, kind first step — not a replacement for a professional.
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="fade-up">
+        <button onclick="toggleExpand(this)" class="w-full flex items-start gap-5 py-6 text-left group">
+          <span class="font-serif text-2xl text-sage/60 mt-0.5 shrink-0">04</span>
+          <div class="flex-1">
+            <h3 class="font-serif text-xl md:text-2xl text-warmdark group-hover:text-terracotta transition-colors duration-300" data-i18n-si="සැබෑ වෘත්තිකයෙකු වෙත සම්බන්ධ වන්න — තවමත් අනන්‍යතාවයෙන් තොරව">
+              Connect to a real professional — still anonymously
+            </h3>
+          </div>
+          <iconify-icon icon="lucide:chevron-down" width="20" class="expand-chevron text-warmgray mt-2 shrink-0"></iconify-icon>
+        </button>
+        <div class="expand-content pl-12 pb-6">
+          <p class="text-warmgray font-light leading-[1.8]" data-i18n-si="AI එකට අර්බුදයක් හඳුනාගතහොත්, ඔබට ක්ෂණිකව සැබෑ උදව් අංක පෙන්වනු ලැබේ. එයට තත්ත්වයට මිනිසෙකු අවශ්‍ය බව හඳුනාගතහොත්, ඔබට සත්‍යාපිත වෛද්‍යවරයෙකු සමඟ අනන්‍යතාවයෙන් තොර සංවාදයක් ඉල්ලා සිටිය හැක — ඔබේ අනන්‍යතාවය කිසි විටෙකත් බෙදාගනු නොලැබේ. වෛද්‍යවරයා පෞද්ගලිකව හමුවීමට උපදෙස් දුන්නොත්, ඔබට ඔවුන්ගේ සායන විස්තර පෙන්වනු ලැබේ. තීරණය, සහ සම්බන්ධතාවය, සම්පූර්ණයෙන්ම ඔබ සතුයි.">
+            If the AI detects a crisis, you'll see real helpline numbers immediately. If it recognises the situation needs a human, you can request an anonymous conversation with a verified doctor — your identity is never shared. If the doctor advises an in-person visit, you'll see their clinic details. The decision, and the contact, are entirely yours.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════ TOPICS ═══════════════════ -->
+<section id="topics" class="relative py-28 md:py-36 px-6 paper-grain">
+  <div class="relative z-10 max-w-5xl mx-auto">
+    <div class="text-center mb-16">
+      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-terracotta mb-5 fade-up" data-i18n-si="මාතෘකා">Topics</p>
+      <h2 class="font-serif text-3xl md:text-4xl text-warmdark leading-[1.15] fade-up" data-i18n-si-html="මිනිසුන් වඩාත්ම බියෙන් සිටින දේ<br class=&quot;hidden md:block&quot;> අහන්න — මෙහි ආවරණය කර ඇත.">
+        The things people are most afraid<br class="hidden md:block"> to ask about — covered here.
+      </h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 fade-up">
+      <!-- Mental Health -->
+      <div class="group relative overflow-hidden rounded-2xl bg-white/60 border border-sand/30 p-8
+                  hover:border-sage/40 hover:shadow-lg hover:shadow-sage/5 transition-all duration-500 cursor-pointer">
+        <div class="relative overflow-hidden rounded-xl mb-6 h-40 bg-gradient-to-br from-sage/10 to-linen flex items-center justify-center">
+          <div class="blob-shape absolute w-24 h-24 bg-sage/20 blur-lg group-hover:bg-sage/30 transition-colors duration-500"></div>
+          <iconify-icon icon="lucide:brain" width="34" class="relative text-sage-dark/50"></iconify-icon>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-sage/15 flex items-center justify-center mb-4">
+          <iconify-icon icon="lucide:brain" width="20" class="text-sage-dark"></iconify-icon>
+        </div>
+        <h3 class="font-serif text-xl text-warmdark mb-2" data-i18n-si="මානසික සෞඛ්‍යය">Mental Health</h3>
+        <p class="text-sm text-warmgray font-light leading-relaxed" data-i18n-si="කාංසාව, මානසික අවපීඩනය, ආතතිය, පිළිස්සීම, කරදරකාරී සිතුවිලි — ඔබ තනිව උසුලාගෙන සිටි ඕනෑම දෙයක්.">
+          Anxiety, depression, stress, burnout, intrusive thoughts — anything you've been carrying alone.
+        </p>
+      </div>
+
+      <!-- Sexual Health -->
+      <div class="group relative overflow-hidden rounded-2xl bg-white/60 border border-sand/30 p-8
+                  hover:border-duskpink/40 hover:shadow-lg hover:shadow-duskpink/5 transition-all duration-500 cursor-pointer">
+        <div class="relative overflow-hidden rounded-xl mb-6 h-40 bg-gradient-to-br from-duskpink/10 to-linen flex items-center justify-center">
+          <div class="blob-shape absolute w-24 h-24 bg-duskpink/20 blur-lg group-hover:bg-duskpink/30 transition-colors duration-500"></div>
+          <iconify-icon icon="lucide:heart" width="34" class="relative text-duskpink-dark/50"></iconify-icon>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-duskpink/15 flex items-center justify-center mb-4">
+          <iconify-icon icon="lucide:heart" width="20" class="text-duskpink-dark"></iconify-icon>
+        </div>
+        <h3 class="font-serif text-xl text-warmdark mb-2" data-i18n-si="ලිංගික සෞඛ්‍යය">Sexual Health</h3>
+        <p class="text-sm text-warmgray font-light leading-relaxed" data-i18n-si="ඔබ දන්නා කිසිවෙකුගෙන් අසන්නට නොහැකි ප්‍රශ්න — එකදු හඳුනාගැනීමේ තොරතුරක්වත් නොමැතිව පිළිතුරු ලබාදෙයි.">
+          Questions you can't ask anyone you know — answered without a single identifying detail.
+        </p>
+      </div>
+
+      <!-- Addiction -->
+      <div class="group relative overflow-hidden rounded-2xl bg-white/60 border border-sand/30 p-8
+                  hover:border-terracotta/40 hover:shadow-lg hover:shadow-terracotta/5 transition-all duration-500 cursor-pointer">
+        <div class="relative overflow-hidden rounded-xl mb-6 h-40 bg-gradient-to-br from-terracotta/10 to-linen flex items-center justify-center">
+          <div class="blob-shape absolute w-24 h-24 bg-terracotta/20 blur-lg group-hover:bg-terracotta/30 transition-colors duration-500"></div>
+          <iconify-icon icon="lucide:shield-check" width="34" class="relative text-terracotta-dark/50"></iconify-icon>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-terracotta/15 flex items-center justify-center mb-4">
+          <iconify-icon icon="lucide:shield-check" width="20" class="text-terracotta-dark"></iconify-icon>
+        </div>
+        <h3 class="font-serif text-xl text-warmdark mb-2" data-i18n-si="ඇබ්බැහිවීම">Addiction</h3>
+        <p class="text-sm text-warmgray font-light leading-relaxed" data-i18n-si="මත්ද්‍රව්‍ය භාවිතය, බලහත්කාර හැසිරීම් — ලැජ්ජාවෙන් නොව, තේරුම්ගැනීමෙන් ආරම්භ වන සහාය.">
+          Substance use, compulsive behaviours — support that starts with understanding, not shame.
+        </p>
+      </div>
+
+      <!-- General Health -->
+      <div class="group relative overflow-hidden rounded-2xl bg-white/60 border border-sand/30 p-8
+                  hover:border-sand/60 hover:shadow-lg hover:shadow-sand/10 transition-all duration-500 cursor-pointer">
+        <div class="relative overflow-hidden rounded-xl mb-6 h-40 bg-gradient-to-br from-sand/20 to-linen flex items-center justify-center">
+          <div class="blob-shape absolute w-24 h-24 bg-sand/40 blur-lg group-hover:bg-sand/50 transition-colors duration-500"></div>
+          <iconify-icon icon="lucide:leaf" width="34" class="relative text-sand-dark/60"></iconify-icon>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-sand/30 flex items-center justify-center mb-4">
+          <iconify-icon icon="lucide:leaf" width="20" class="text-sand-dark"></iconify-icon>
+        </div>
+        <h3 class="font-serif text-xl text-warmdark mb-2" data-i18n-si="සාමාන්‍ය සෞඛ්‍යය">General Health</h3>
+        <p class="text-sm text-warmgray font-light leading-relaxed" data-i18n-si="මුහුණට මුහුණ කතා කිරීමට තවම සූදානම් නැති ශාරීරික ගැටලු — නිවැරදි සත්කාරය වෙත මග පෙන්වීම.">
+          Bodily concerns you're not ready to discuss face-to-face — guidance toward the right care.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════ ANONYMOUS VOICES (Typing Effect) ═══════════════════ -->
+<section class="relative py-28 md:py-36 px-6 bg-warmdark text-offwhite overflow-hidden">
+  <!-- Warm ambient light -->
+  <div class="absolute top-0 right-0 w-96 h-96 bg-terracotta/8 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute bottom-0 left-0 w-80 h-80 bg-sage/5 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="relative z-10 max-w-4xl mx-auto">
+    <div class="text-center mb-16">
+      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-duskpink-light mb-5 fade-up" data-i18n-si="අනන්‍ය හඬවල්">Anonymous Voices</p>
+      <h2 class="font-serif text-3xl md:text-4xl text-offwhite leading-[1.15] fade-up" data-i18n-si="මේවා සැබෑ බියයි. අප මෙය ගොඩනැගුවේ ඔවුන් වෙනුවෙනි.">
+        These are real fears. We built this for them.
+      </h2>
+      <p class="text-warmgray font-light mt-4 fade-up">
+        <span class="italic text-duskpink-light" data-i18n-si="කතාව කියවීමට කාඩ්පතක් මත රැඳී සිටින්න.">Hover over a card to read their story.</span>
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Voice 1 -->
+      <div class="fade-up voice-card group bg-white/5 border border-white/10 rounded-2xl p-8
+                  hover:bg-white/8 hover:border-duskpink/30 transition-all duration-500 cursor-default"
+           data-text="I couldn't tell my family I was having panic attacks. They'd say I was being dramatic. Here, I could just… say it. And someone listened.">
+        <div class="w-10 h-10 rounded-full bg-duskpink/15 flex items-center justify-center mb-5">
+          <iconify-icon icon="lucide:message-circle" width="18" class="text-duskpink-light"></iconify-icon>
+        </div>
+        <p class="text-xs font-medium uppercase tracking-[0.2em] text-warmgray/50 mb-4">Anonymous, age 20–25</p>
+        <p class="text-offwhite/80 font-light leading-[1.8] text-sm min-h-[80px]">
+          <span class="voice-placeholder text-offwhite/30 italic">Hover to read…</span>
+          <span class="voice-text hidden"></span>
+        </p>
+      </div>
+
+      <!-- Voice 2 -->
+      <div class="fade-up voice-card group bg-white/5 border border-white/10 rounded-2xl p-8
+                  hover:bg-white/8 hover:border-sage/30 transition-all duration-500 cursor-default"
+           data-text="I was scared the doctor at our local clinic would tell my parents. I'd rather suffer than have everyone know. This let me ask what I needed to ask, and then decide what to do next.">
+        <div class="w-10 h-10 rounded-full bg-sage/15 flex items-center justify-center mb-5">
+          <iconify-icon icon="lucide:message-circle" width="18" class="text-sage-light"></iconify-icon>
+        </div>
+        <p class="text-xs font-medium uppercase tracking-[0.2em] text-warmgray/50 mb-4">Anonymous, under 18</p>
+        <p class="text-offwhite/80 font-light leading-[1.8] text-sm min-h-[80px]">
+          <span class="voice-placeholder text-offwhite/30 italic">Hover to read…</span>
+          <span class="voice-text hidden"></span>
+        </p>
+      </div>
+
+      <!-- Voice 3 -->
+      <div class="fade-up voice-card group bg-white/5 border border-white/10 rounded-2xl p-8
+                  hover:bg-white/8 hover:border-terracotta/30 transition-all duration-500 cursor-default"
+           data-text="I've been trying to stop for two years. I can't talk to my colleagues. I can't talk to my wife. The AI didn't shame me. It helped me understand this is something I can get through, and gave me a way to talk to someone real.">
+        <div class="w-10 h-10 rounded-full bg-terracotta/15 flex items-center justify-center mb-5">
+          <iconify-icon icon="lucide:message-circle" width="18" class="text-terracotta-light"></iconify-icon>
+        </div>
+        <p class="text-xs font-medium uppercase tracking-[0.2em] text-warmgray/50 mb-4">Anonymous, age 26–40</p>
+        <p class="text-offwhite/80 font-light leading-[1.8] text-sm min-h-[80px]">
+          <span class="voice-placeholder text-offwhite/30 italic">Hover to read…</span>
+          <span class="voice-text hidden"></span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════ SAFETY & PRIVACY ═══════════════════ -->
+<section id="safety" class="relative py-28 md:py-36 px-6 paper-grain">
+  <div class="relative z-10 max-w-5xl mx-auto">
+    <div class="grid md:grid-cols-2 gap-16 md:gap-20 items-start">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-sage-dark mb-5 fade-up" data-i18n-si="ආරක්ෂාව සහ පෞද්ගලිකත්වය">Safety & Privacy</p>
+        <h2 class="font-serif text-3xl md:text-4xl text-warmdark leading-[1.15] mb-8 fade-up" data-i18n-si-html="ඔබේ අනන්‍යතාවය කිසි විටෙකත්<br> උදව් ලබාගැනීමේ මිල නොවේ.">
+          Your identity is never<br> the price of getting help.
+        </h2>
+        <div class="relative rounded-2xl h-[360px] bg-gradient-to-br from-sage/10 to-linen overflow-hidden flex items-center justify-center fade-up">
+          <div class="blob-shape absolute w-[60%] h-[55%] bg-gradient-to-br from-sage/25 to-sand/15 blur-2xl"></div>
+          <div class="relative bg-white/70 backdrop-blur-sm border border-sage/20 rounded-2xl px-6 py-5 flex items-center gap-3">
+            <iconify-icon icon="lucide:shield-check" width="26" class="text-sage-dark"></iconify-icon>
+            <div class="text-left">
+              <p class="text-sm font-serif text-warmdark" data-i18n-si="සත්‍යාපිතයි, උපකල්පිත නොවේ">Verified, not assumed</p>
+              <p class="text-xs text-warmgray/70" data-i18n-si="සෑම වෛද්‍යවරයෙක්ම SLMC සමඟ පරීක්ෂා කර ඇත">Every doctor checked against SLMC</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-8">
+        <div class="fade-up flex gap-5">
+          <div class="w-10 h-10 rounded-full bg-sage/15 flex items-center justify-center shrink-0 mt-0.5">
+            <iconify-icon icon="lucide:eye-off" width="18" class="text-sage-dark"></iconify-icon>
+          </div>
+          <div>
+            <h3 class="font-serif text-lg text-warmdark mb-2" data-i18n-si="අනන්‍යතා තොරතුරු කිසිවක් නැත">Zero identity fields</h3>
+            <p class="text-sm text-warmgray font-light leading-[1.8]" data-i18n-si="නමක්, ජා.හැ.අ., විද්‍යුත් තැපෑලක්, හෝ දුරකථනයක් — ඇප් එක තුළ කොතැනකවත් නැත. ප්‍රතිපත්තියකින් නොව, සැලසුමෙන්ම සත්‍යාපිතයි.">
+              No name, NIC, email, or phone — anywhere in the app. Verified by design, not just policy.
+            </p>
+          </div>
+        </div>
+
+        <div class="fade-up flex gap-5">
+          <div class="w-10 h-10 rounded-full bg-terracotta/15 flex items-center justify-center shrink-0 mt-0.5">
+            <iconify-icon icon="lucide:lock" width="18" class="text-terracotta-dark"></iconify-icon>
+          </div>
+          <div>
+            <h3 class="font-serif text-lg text-warmdark mb-2" data-i18n-si="සංකේතනය සහ අවම රඳවා ගැනීම">Encrypted & minimal retention</h3>
+            <p class="text-sm text-warmgray font-light leading-[1.8]" data-i18n-si="සියලුම දත්ත ගමනාගමනය HTTPS භාවිතා කරයි. ගබඩා කළ සංවාද සංකේතනය කර ඇත. මනෝභාවය සටහන් කිසි විටෙකත් අනන්‍යතාවයකට සම්බන්ධ නොවේ. ඔබට ඕනෑම වේලාවක ඔබේ දත්ත මකා දැමිය හැක.">
+              All traffic uses HTTPS. Stored chats are encrypted. Mood logs are never linked to an identity. You can clear your data anytime.
+            </p>
+          </div>
+        </div>
+
+        <div class="fade-up flex gap-5">
+          <div class="w-10 h-10 rounded-full bg-duskpink/15 flex items-center justify-center shrink-0 mt-0.5">
+            <iconify-icon icon="lucide:shield-check" width="18" class="text-duskpink-dark"></iconify-icon>
+          </div>
+          <div>
+            <h3 class="font-serif text-lg text-warmdark mb-2" data-i18n-si="සත්‍යාපිත වෘත්තිකයන් පමණි">Verified professionals only</h3>
+            <p class="text-sm text-warmgray font-light leading-[1.8]" data-i18n-si="සෑම වෛද්‍යවරයෙක්ම සංවාදයක් පිළිගැනීමට පෙර SLMC වාර්තා සමඟ පරීක්ෂා කරනු ලැබේ. ඔබට පෙනෙන්නේ සත්‍යාපිත ලාංඡනයක් — කිසි විටෙකත් සත්‍යාපනය නොකළ අමුත්තෙකු නොවේ.">
+              Every doctor is checked against SLMC records before they can accept a chat. You see a verified badge — never an unverified stranger.
+            </p>
+          </div>
+        </div>
+
+        <div class="fade-up flex gap-5">
+          <div class="w-10 h-10 rounded-full bg-sand/30 flex items-center justify-center shrink-0 mt-0.5">
+            <iconify-icon icon="lucide:scale" width="18" class="text-sand-dark"></iconify-icon>
+          </div>
+          <div>
+            <h3 class="font-serif text-lg text-warmdark mb-2" data-i18n-si="තොරතුරු, රෝග විනිශ්චයක් නොවේ">Information, not diagnosis</h3>
+            <p class="text-sm text-warmgray font-light leading-[1.8]" data-i18n-si="AI එක ඔබට තේරුම් ගැනීමට උදව් කරයි — එය ඔබට 'තියෙනවා' කියලා කිසි විටෙකත් රෝගයක් හෝ ගත යුතු දෙයක් නොකියයි. සැබෑ වෛද්‍ය තීරණ සැමවිටම වෘත්තිකයෙකුට භාර දෙනු ලැබේ.">
+              The AI helps you understand — it never tells you that you "have" a condition or what to take. Real medical decisions are always handed to a professional.
+            </p>
+          </div>
+        </div>
+
+        <div class="fade-up flex gap-5">
+          <div class="w-10 h-10 rounded-full bg-sage/15 flex items-center justify-center shrink-0 mt-0.5">
+            <iconify-icon icon="lucide:ban" width="18" class="text-sage-dark"></iconify-icon>
+          </div>
+          <div>
+            <h3 class="font-serif text-lg text-warmdark mb-2" data-i18n-si="තෙවන පාර්ශ්ව ලුහුබැඳීමක් නැත">No third-party tracking</h3>
+            <p class="text-sm text-warmgray font-light leading-[1.8]" data-i18n-si="සංවේදී ප්‍රවාහයන් තුළ විශ්ලේෂණ නැත, දැන්වීම් නැත, ලුහුබැඳීමේ පික්සල නැත. ඔබේ සංවාදය ඔබ සහ වේදිකාව අතර පමණක් රැඳී පවතී.">
+              No analytics, no ads, no tracking pixels inside sensitive flows. Your conversation stays between you and the platform.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════ CRISIS HELPLINES ═══════════════════ -->
+<section class="relative py-20 md:py-24 px-6 bg-terracotta/8 border-y border-terracotta/10">
+  <div class="relative z-10 max-w-3xl mx-auto text-center">
+    <div class="fade-up">
+      <div class="w-12 h-12 rounded-full bg-terracotta/15 flex items-center justify-center mx-auto mb-6">
+        <iconify-icon icon="lucide:phone" width="22" class="text-terracotta"></iconify-icon>
+      </div>
+      <h2 class="font-serif text-2xl md:text-3xl text-warmdark mb-3" data-i18n-si="ඔබ ක්ෂණික අවදානමක සිටී නම්, කරුණාකර දැන් ඇමතුමක් ගන්න.">
+        If you're in immediate danger, please call now.
+      </h2>
+      <p class="text-warmgray font-light mb-10 max-w-lg mx-auto" data-i18n-si="මේවා පැය 24පුරාම ලබාගත හැකි නොමිලේ, රහස්‍යභාවයෙන් යුතු ශ්‍රී ලාංකික දුරකථන අංක වේ.">
+        These are free, confidential Sri Lankan helplines available 24 hours a day.
+      </p>
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-5 fade-up">
+      <a href="tel:1333" class="group block bg-white/70 border border-terracotta/15 rounded-xl p-6
+                          hover:bg-white hover:shadow-lg hover:shadow-terracotta/5 transition-all duration-300">
+        <p class="font-serif text-3xl text-terracotta mb-1">1333</p>
+        <p class="text-xs font-semibold uppercase tracking-wider text-warmgray mb-1" data-i18n-si="අර්බුද සහාය">Crisis Support</p>
+        <p class="text-[11px] text-warmgray/60" data-i18n-si="24/7 · නොමිලේ">24/7 · Free</p>
+      </a>
+      <a href="tel:1926" class="group block bg-white/70 border border-terracotta/15 rounded-xl p-6
+                          hover:bg-white hover:shadow-lg hover:shadow-terracotta/5 transition-all duration-300">
+        <p class="font-serif text-3xl text-terracotta mb-1">1926</p>
+        <p class="text-xs font-semibold uppercase tracking-wider text-warmgray mb-1" data-i18n-si="මානසික සෞඛ්‍යය">Mental Health</p>
+        <p class="text-[11px] text-warmgray/60" data-i18n-si="24/7 · නොමිලේ">24/7 · Free</p>
+      </a>
+      <a href="tel:1929" class="group block bg-white/70 border border-terracotta/15 rounded-xl p-6
+                          hover:bg-white hover:shadow-lg hover:shadow-terracotta/5 transition-all duration-300">
+        <p class="font-serif text-3xl text-terracotta mb-1">1929</p>
+        <p class="text-xs font-semibold uppercase tracking-wider text-warmgray mb-1" data-i18n-si="ළමා අංශය">Childline</p>
+        <p class="text-[11px] text-warmgray/60" data-i18n-si="24/7 · නොමිලේ · 18ට අඩු">24/7 · Free · Under 18</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════ START TALKING CTA ═══════════════════ -->
+<section id="start" class="relative py-32 md:py-44 px-6 paper-grain overflow-hidden">
+  <!-- Ambient warmth -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-duskpink/8 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="relative z-10 max-w-2xl mx-auto text-center">
+    <div class="fade-up">
+      <div class="relative w-20 h-20 rounded-full bg-terracotta/10 flex items-center justify-center mx-auto mb-10">
+        <div class="absolute inset-0 rounded-full bg-terracotta/10 breathe"></div>
+        <iconify-icon icon="lucide:message-circle-heart" width="32" class="text-terracotta relative z-10"></iconify-icon>
+      </div>
+    </div>
+
+    <h2 class="font-serif text-4xl md:text-5xl lg:text-6xl text-warmdark leading-[1.1] mb-6 fade-up" data-i18n-si="සවන් දීමට සූදානම්ද?">
+      Ready to be heard?
+    </h2>
+    <p class="text-warmgray font-light leading-[1.8] mb-4 fade-up" data-i18n-si="ලියාපදිංචි වීමේ පෝරමයක් නැත. නම් ක්ෂේත්‍රයක් නැත. තහවුරු කිරීමට විද්‍යුත් තැපෑලක් නැත.">
+      There's no sign-up form. No name field. No email to verify.
+    </p>
+    <p class="text-sm text-warmgray/60 font-light mb-12 fade-up" data-i18n-si="ඔබෙන් අසනු ලබන්නේ පුළුල් වයස් කාණ්ඩයක් පමණි — ඔබව හඳුනාගැනීමට කිසිවක් නැත.">
+      You'll only be asked for a broad age band — nothing that identifies you.
+    </p>
+
+    <div class="fade-up flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="/start"
+         class="inline-flex items-center gap-3 bg-warmdark text-offwhite text-base font-semibold px-10 py-5 rounded-full
+                hover:bg-terracotta transition-all duration-300 shadow-xl shadow-warmdark/15
+                hover:shadow-terracotta/20 hover:scale-[1.02]">
+        <span data-i18n-si="දැන් කතා කිරීම ආරම්භ කරන්න">Start Talking Now</span>
+        <iconify-icon icon="lucide:arrow-right" width="20"></iconify-icon>
+      </a>
+      <a href="/start?doctor=1"
+         class="inline-flex items-center gap-2.5 border border-sage/60 text-warmdark text-base font-semibold px-8 py-5 rounded-full
+                hover:bg-sage/10 hover:border-sage transition-all duration-300">
+        <iconify-icon icon="lucide:stethoscope" width="18"></iconify-icon>
+        <span data-i18n-si="වෛද්‍යවරයෙකු සමඟ කෙලින්ම">Straight to a Doctor</span>
+      </a>
+    </div>
+
+    <div class="flex items-center justify-center gap-6 mt-10 fade-up">
+      <div class="flex items-center gap-2 text-xs text-warmgray/50">
+        <iconify-icon icon="lucide:check" width="14" class="text-sage"></iconify-icon>
+        <span data-i18n-si="ලොගින් අවශ්‍ය නැත">No login</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-warmgray/50">
+        <iconify-icon icon="lucide:check" width="14" class="text-sage"></iconify-icon>
+        <span data-i18n-si="නමක් නැත">No name</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-warmgray/50">
+        <iconify-icon icon="lucide:check" width="14" class="text-sage"></iconify-icon>
+        <span data-i18n-si="ලුහුබැඳීමක් නැත">No tracking</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-warmgray/50">
+        <iconify-icon icon="lucide:check" width="14" class="text-sage"></iconify-icon>
+        <span data-i18n-si="නොමිලේ">Free</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="relative py-16 px-6 bg-warmdark text-offwhite/60 border-t border-white/5">
+  <div class="max-w-5xl mx-auto">
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+      <div>
+        <a href="/" class="font-serif text-2xl text-offwhite mb-4 block">
+          JustAsk<span class="text-terracotta-light">LK</span>
+        </a>
+        <p class="text-sm font-light leading-relaxed text-offwhite/40" data-i18n-si="අපකීර්තියට හෝ විනිශ්චයට බිය වන අයට අනන්‍යතාවයෙන් තොර, AI-මූලික සෞඛ්‍ය සහාය වේදිකාවක්. ශ්‍රී ලංකාවේ තැනූ, ශ්‍රී ලංකාව සඳහා.">
+          An anonymous, AI-first health support platform for people who fear stigma or judgement. Built in Sri Lanka, for Sri Lanka.
+        </p>
+      </div>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-offwhite/30 mb-4" data-i18n-si="වේදිකාව">Platform</p>
+        <div class="space-y-3">
+          <a href="#how" data-i18n-si="මූලික ක්‍රියාවලිය" class="block text-sm text-offwhite/50 hover:text-offwhite transition-colors duration-300">How It Works</a>
+          <a href="#topics" data-i18n-si="මාතෘකා" class="block text-sm text-offwhite/50 hover:text-offwhite transition-colors duration-300">Topics</a>
+          <a href="#safety" data-i18n-si="ආරක්ෂාව සහ පෞද්ගලිකත්වය" class="block text-sm text-offwhite/50 hover:text-offwhite transition-colors duration-300">Safety & Privacy</a>
+        </div>
+      </div>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-offwhite/30 mb-4" data-i18n-si="වෘත්තිකයන් සඳහා">For Professionals</p>
+        <div class="space-y-3">
+          <a href="/doctor" data-i18n-si="වෛද්‍යවරයෙකු ලෙස ලියාපදිංචි වන්න" class="block text-sm text-offwhite/50 hover:text-sage-light transition-colors duration-300">Register as a Doctor</a>
+          <a href="/doctor" data-i18n-si="වෛද්‍ය පිවිසුම" class="block text-sm text-offwhite/50 hover:text-sage-light transition-colors duration-300">Doctor Sign In</a>
+        </div>
+        <p class="text-[11px] text-offwhite/25 leading-relaxed mt-3" data-i18n-si="ලියාපදිංචි වීමෙන් පසු SLMC ලියාපදිංචිය පරීක්ෂා කරන තෙක් රෝගීන් සමඟ සම්බන්ධ විය නොහැක.">
+          SLMC registration is verified before any account can accept consultations.
+        </p>
+      </div>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-offwhite/30 mb-4" data-i18n-si="දැන් උදව්">Help Now</p>
+        <div class="space-y-3">
+          <a href="tel:1333" data-i18n-si="1333 — අර්බුද සහාය" class="block text-sm text-offwhite/50 hover:text-terracotta-light transition-colors duration-300">1333 — Crisis Support</a>
+          <a href="tel:1926" data-i18n-si="1926 — මානසික සෞඛ්‍යය" class="block text-sm text-offwhite/50 hover:text-terracotta-light transition-colors duration-300">1926 — Mental Health</a>
+          <a href="tel:1929" data-i18n-si="1929 — ළමා අංශය" class="block text-sm text-offwhite/50 hover:text-terracotta-light transition-colors duration-300">1929 — Childline</a>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <p class="text-xs text-offwhite/25 font-light" data-i18n-si="JustAsk LK යනු තොරතුරු සහ මග පෙන්වීමේ මෙවලමක් පමණි. එය රෝග විනිශ්චය, ප්‍රතිකාර, හෝ බෙහෙත් වට්ටෝරු සපයන්නේ නැත.">
+        JustAsk LK is an informational and signposting tool only. It does not provide diagnosis, treatment, or prescriptions.
+      </p>
+      <p class="text-xs text-offwhite/20 font-light">
+        © 2026 JustAsk LK · CCS2313 Mini Project · Group 05
+      </p>
+    </div>
+  </div>
+</footer>
+
+
+<!-- ═══════════════════ CHIME TOGGLE (Opt-in) ═══════════════════ -->
+<div id="chimeToggle" class="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+  <div id="chimeToast" class="toast bg-warmdark text-offwhite text-xs font-medium px-4 py-2.5 rounded-full shadow-lg mb-1">
+    <iconify-icon icon="lucide:volume-2" width="12" class="mr-1 opacity-60"></iconify-icon>
+    Soft chime enabled
+  </div>
+  <button onclick="toggleChime()" id="chimeBtn"
+          class="chime-btn w-11 h-11 rounded-full border border-sand/40 bg-offwhite/80 backdrop-blur-sm
+                 flex items-center justify-center text-warmgray hover:text-warmdark
+                 shadow-sm transition-all duration-300"
+          title="Toggle scroll chime">
+    <iconify-icon icon="lucide:bell-off" width="16" id="chimeIcon"></iconify-icon>
+  </button>
+</div>
+
+
+<!-- ═══════════════════ JAVASCRIPT ═══════════════════ -->
+<script>
+// ─── Scroll-triggered fade-up ───
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+
+// ─── Navbar scroll effect + scroll progress bar ───
+const navbar = document.getElementById('navbar');
+const scrollProgress = document.getElementById('scrollProgress');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 60) {
+    navbar.classList.add('nav-scrolled');
+  } else {
+    navbar.classList.remove('nav-scrolled');
+  }
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  scrollProgress.style.width = pct + '%';
+}, { passive: true });
+
+
+// ─── Language toggle (English / Sinhala) ───
+let currentLang = 'en';
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  document.documentElement.setAttribute('lang', lang);
+  document.body.classList.toggle('lang-si', lang === 'si');
+
+  document.querySelectorAll('[data-i18n-si]').forEach(el => {
+    if (!el.hasAttribute('data-i18n-en')) {
+      el.setAttribute('data-i18n-en', el.textContent);
+    }
+    el.textContent = lang === 'si' ? el.getAttribute('data-i18n-si') : el.getAttribute('data-i18n-en');
+  });
+
+  document.querySelectorAll('[data-i18n-si-html]').forEach(el => {
+    if (!el.hasAttribute('data-i18n-en-html')) {
+      el.setAttribute('data-i18n-en-html', el.innerHTML);
+    }
+    el.innerHTML = lang === 'si' ? el.getAttribute('data-i18n-si-html') : el.getAttribute('data-i18n-en-html');
+  });
+
+  const desktopLabel = document.getElementById('langLabelDesktop');
+  const mobileLabel = document.getElementById('langLabelMobile');
+  if (desktopLabel) desktopLabel.textContent = lang === 'si' ? 'English' : 'සිංහල';
+  if (mobileLabel) mobileLabel.textContent = lang === 'si' ? 'English' : 'සිංහල';
+
+  renderSessionChip();
+}
+
+function toggleLanguage() {
+  applyLanguage(currentLang === 'en' ? 'si' : 'en');
+}
+
+
+// ─── Session chip cipher effect (signature motif, language-aware) ───
+let sessionChipFinalId = null;
+
+function renderSessionChip() {
+  const el = document.getElementById('heroSessionChip');
+  if (!el) return;
+  const suffix = currentLang === 'si' ? ' · අනන්‍යතාවයෙන් තොරයි' : ' · anonymous';
+
+  if (sessionChipFinalId) {
+    el.textContent = 'Session #' + sessionChipFinalId + suffix;
+    return;
+  }
+
+  const chars = 'ABCDEF0123456789';
+  const finalId = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  let frame = 0;
+  const totalFrames = 16;
+
+  function render() {
+    if (frame >= totalFrames) {
+      sessionChipFinalId = finalId;
+      el.textContent = 'Session #' + finalId + suffix;
+      return;
+    }
+    const scrambled = Array.from({ length: 4 }, (_, i) => {
+      if (frame > totalFrames - 4 + i) return finalId[i];
+      return chars[Math.floor(Math.random() * chars.length)];
+    }).join('');
+    el.textContent = 'Session #' + scrambled + suffix;
+    frame++;
+    setTimeout(render, 70);
+  }
+  setTimeout(render, 900);
+}
+renderSessionChip();
+
+
+// ─── Mobile menu ───
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileMenu = document.getElementById('mobileMenu');
+let menuOpen = false;
+
+mobileMenuBtn.addEventListener('click', () => {
+  menuOpen = !menuOpen;
+  mobileMenu.classList.toggle('hidden');
+  mobileMenuBtn.innerHTML = menuOpen
+    ? '<iconify-icon icon="lucide:x" width="24"></iconify-icon>'
+    : '<iconify-icon icon="lucide:menu" width="24"></iconify-icon>';
+});
+
+document.querySelectorAll('.mobile-link').forEach(link => {
+  link.addEventListener('click', () => {
+    menuOpen = false;
+    mobileMenu.classList.add('hidden');
+    mobileMenuBtn.innerHTML = '<iconify-icon icon="lucide:menu" width="24"></iconify-icon>';
+  });
+});
+
+
+// ─── Expandable rows ───
+function toggleExpand(button) {
+  const content = button.nextElementSibling;
+  const chevron = button.querySelector('.expand-chevron');
+  const isOpen = content.classList.contains('open');
+
+  // Close all others first
+  document.querySelectorAll('.expand-content.open').forEach(el => {
+    el.classList.remove('open');
+    el.previousElementSibling.querySelector('.expand-chevron').classList.remove('rotated');
+  });
+
+  if (!isOpen) {
+    content.classList.add('open');
+    chevron.classList.add('rotated');
+  }
+}
+
+
+// ─── Typing effect on voice cards ───
+document.querySelectorAll('.voice-card').forEach(card => {
+  const text = card.dataset.text;
+  const textEl = card.querySelector('.voice-text');
+  const placeholderEl = card.querySelector('.voice-placeholder');
+  let typingTimeout = null;
+  let currentChar = 0;
+  let hasTyped = false;
+
+  card.addEventListener('mouseenter', () => {
+    if (hasTyped) return;
+
+    placeholderEl.classList.add('hidden');
+    textEl.classList.remove('hidden');
+    textEl.classList.add('typing-cursor');
+    currentChar = 0;
+
+    function typeNext() {
+      if (currentChar < text.length) {
+        textEl.textContent = text.substring(0, currentChar + 1);
+        currentChar++;
+        typingTimeout = setTimeout(typeNext, 28 + Math.random() * 18);
+      } else {
+        textEl.classList.remove('typing-cursor');
+        hasTyped = true;
+      }
+    }
+    typeNext();
+  });
+
+  card.addEventListener('mouseleave', () => {
+    if (!hasTyped && typingTimeout) {
+      clearTimeout(typingTimeout);
+      textEl.classList.remove('typing-cursor');
+      textEl.classList.add('hidden');
+      textEl.textContent = '';
+      placeholderEl.classList.remove('hidden');
+    }
+  });
+});
+
+
+// ─── Chime on first scroll (opt-in) ───
+let chimeEnabled = false;
+let chimeHasPlayed = false;
+
+function toggleChime() {
+  chimeEnabled = !chimeEnabled;
+  const btn = document.getElementById('chimeBtn');
+  const icon = document.getElementById('chimeIcon');
+  const toast = document.getElementById('chimeToast');
+
+  if (chimeEnabled) {
+    btn.classList.add('active');
+    icon.setAttribute('icon', 'lucide:bell');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  } else {
+    btn.classList.remove('active');
+    icon.setAttribute('icon', 'lucide:bell-off');
+    toast.textContent = '🔔 Chime disabled';
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.innerHTML = '<iconify-icon icon="lucide:volume-2" width="12" class="mr-1 opacity-60"></iconify-icon> Soft chime enabled';
+    }, 2500);
+  }
+}
+
+function playChime() {
+  if (!chimeEnabled || chimeHasPlayed) return;
+  chimeHasPlayed = true;
+
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Soft bell-like tone: fundamental + harmonic
+    const now = ctx.currentTime;
+
+    [528, 528 * 1.5, 528 * 2].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      const vol = 0.12 / (i + 1);
+      gain.gain.setValueAtTime(vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + i * 0.05);
+      osc.stop(now + 2.5);
+    });
+  } catch (e) {
+    // Web Audio not available — silent fail
+  }
+}
+
+let scrollChimeTriggered = false;
+window.addEventListener('scroll', () => {
+  if (!scrollChimeTriggered && window.scrollY > 200) {
+    scrollChimeTriggered = true;
+    playChime();
+  }
+}, { passive: true });
+</script>
+
+</body>
+</html>
