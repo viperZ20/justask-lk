@@ -4,6 +4,8 @@
 //
 // Run from the backend folder:  node scripts/seedDoctors.js
 
+require('dns').setServers(['8.8.8.8', '1.1.1.1']);
+
 require('dotenv').config();
 const mongoose = require('mongoose');
 const DoctorProfile = require('../models/doctorProfile');
