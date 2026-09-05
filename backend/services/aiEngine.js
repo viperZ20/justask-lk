@@ -16,7 +16,7 @@ const { GoogleGenAI } = require('@google/genai');
 // tier and has the most generous free-tier quota, so it goes first; the
 // heavier model is only a backstop. If every model is exhausted we fall
 // through to the canned replies rather than showing the user an error.
-const MODELS = ['gemini-3.5-flash-lite', 'gemini-3.6-flash'];
+const MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
 
 const ai = process.env.GEMINI_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
